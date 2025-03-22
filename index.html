@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Text Sharing</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        #addBtn { font-size: 20px; padding: 10px; cursor: pointer; }
+        #inputContainer { display: none; margin-top: 20px; }
+        textarea { width: 80%; height: 100px; padding: 10px; }
+        button { padding: 10px 15px; margin: 10px; cursor: pointer; }
+        .note { background: #f4f4f4; padding: 10px; margin: 5px auto; width: 80%; 
+                border-left: 5px solid #007BFF; text-align: left; }
+    </style>
+</head>
+<body>
+    <h2>Public Text Sharing</h2>
+    <button id="addBtn">➕ Add New Text</button>
+
+    <div id="inputContainer">
+        <textarea id="userText" placeholder="Write something..."></textarea><br>
+        <button onclick="saveText()">Save</button>
+    </div>
+
+    <h3>Saved Texts:</h3>
+    <div id="textContainer"></div>
+
+    <script>
+        const BACKEND_URL = "https://your-backend.onrender.com"; // Replace with your actual backend URL
+
+        document.getElementById('addBtn').addEventListener('click', () => {
+            document.getElementById('inputContainer').style.display = 'block';
+        });
+
+        function saveText() {
+            let text = document.getElementById("userText").value;
+            if (text.trim() === "") return alert("Text cannot be empty!");
+
+            fetch(BACKEND_URL + "/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(() => {
+                document.getElementById("userText").value = "";
+                document.getElementById("inputContainer").style.display = "none";
+                loadTexts();
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        function loadTexts() {
+            document.getElementById("textContainer").innerHTML = "";
+
+            fetch(BACKEND_URL + "/texts")
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(note => {
+                    let noteDiv = document.createElement("div");
+                    noteDiv.className = "note";
+                    noteDiv.innerText = note;
+                    document.getElementById("textContainer").appendChild(noteDiv);
+                });
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        loadTexts();
+    </script>
+</body>
+</html>
