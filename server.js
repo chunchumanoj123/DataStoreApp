@@ -39,5 +39,19 @@ app.post("/", (req, res) => {
     res.json({ success: true, message: "Text saved!" });
 });
 
+// Delete a text by index
+app.delete("/:index", (req, res) => {
+    let texts = loadData();
+    const index = parseInt(req.params.index);
+
+    if (index < 0 || index >= texts.length) {
+        return res.status(400).json({ error: "Invalid index!" });
+    }
+
+    texts.splice(index, 1);
+    saveData(texts);
+    res.json({ success: true, message: "Text deleted!" });
+});
+
 // Start the server
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
