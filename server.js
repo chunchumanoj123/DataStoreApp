@@ -1,42 +1,43 @@
 const express = require("express");
-const fs = require("fs");
 const cors = require("cors");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FILE_PATH = "data.json";
 
 app.use(cors());
 app.use(express.json());
 
-// Save new text
-app.post("/save", (req, res) => {
-    let { text } = req.body;
-    if (!text || text.trim() === "") {
-        return res.status(400).json({ error: "Text cannot be empty" });
+const DATA_FILE = "data.json";
+
+// Load data from file
+const loadData = () => {
+    if (!fs.existsSync(DATA_FILE)) {
+        fs.writeFileSync(DATA_FILE, JSON.stringify([]));
     }
+    return JSON.parse(fs.readFileSync(DATA_FILE));
+};
 
-    let texts = [];
-    if (fs.existsSync(FILE_PATH)) {
-        texts = JSON.parse(fs.readFileSync(FILE_PATH));
-    }
-
-    texts.push(text.trim());
-    fs.writeFileSync(FILE_PATH, JSON.stringify(texts, null, 2));
-
-    res.json({ success: true });
-});
+// Save data to file
+const saveData = (data) => {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+};
 
 // Get all saved texts
-app.get("/texts", (req, res) => {
-    if (!fs.existsSync(FILE_PATH)) {
-        return res.json([]);
+app.get("/", (req, res) => {
+    res.json(loadData());
+});
+
+// Save a new text
+app.post("/", (req, res) => {
+    const texts = loadData();
+    if (!req.body.text) {
+        return res.status(400).json({ error: "Text is required!" });
     }
-
-    let texts = JSON.parse(fs.readFileSync(FILE_PATH));
-    res.json(texts);
+    texts.push(req.body.text);
+    saveData(texts);
+    res.json({ success: true, message: "Text saved!" });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start the server
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
