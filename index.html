@@ -27,7 +27,7 @@
     <div id="textContainer"></div>
 
     <script>
-        const BACKEND_URL = "https://datastoreapp.onrender.com"; // Replace with your actual backend URL
+        const BACKEND_URL = "https://datastoreapp.onrender.com"; // Replace with your Render backend URL
 
         document.getElementById('addBtn').addEventListener('click', () => {
             document.getElementById('inputContainer').style.display = 'block';
@@ -37,7 +37,7 @@
             let text = document.getElementById("userText").value;
             if (text.trim() === "") return alert("Text cannot be empty!");
 
-            fetch(BACKEND_URL + "/save", {
+            fetch(BACKEND_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text: text })
@@ -54,7 +54,7 @@
         function loadTexts() {
             document.getElementById("textContainer").innerHTML = "";
 
-            fetch(BACKEND_URL + "/texts")
+            fetch(BACKEND_URL)
             .then(response => response.json())
             .then(data => {
                 data.forEach(note => {
