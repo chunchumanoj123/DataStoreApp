@@ -1,57 +1,56 @@
 const express = require("express");
-const cors = require("cors");
 const fs = require("fs");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
 
-const DATA_FILE = "data.json";
+const PORT = 3000;
+const VISITOR_FILE = "visitors.json";
+const TEXT_FILE = "texts.json";
 
-// Load data from file
-const loadData = () => {
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+// Get IP function
+function getClientIP(req) {
+    return req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+}
+
+// Log visitors
+app.get("/visit", (req, res) => {
+    const ip = getClientIP(req);
+    let visitors = [];
+
+    if (fs.existsSync(VISITOR_FILE)) {
+        visitors = JSON.parse(fs.readFileSync(VISITOR_FILE));
     }
-    return JSON.parse(fs.readFileSync(DATA_FILE));
-};
 
-// Save data to file
-const saveData = (data) => {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-};
+    if (!visitors.includes(ip)) {
+        visitors.push(ip);
+        fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
+    }
 
-// Get all saved texts
-app.get("/", (req, res) => {
-    res.json(loadData());
+    res.json({ message: "Visitor logged", totalVisitors: visitors.length, visitors });
 });
 
-// Save a new text
-app.post("/", (req, res) => {
-    const texts = loadData();
-    if (!req.body.text) {
-        return res.status(400).json({ error: "Text is required!" });
-    }
+// Get all visitors
+app.get("/visitors", (req, res) => {
+    let visitors = fs.existsSync(VISITOR_FILE) ? JSON.parse(fs.readFileSync(VISITOR_FILE)) : [];
+    res.json({ totalVisitors: visitors.length, visitors });
+});
+
+// Save text
+app.post("/save", (req, res) => {
+    let texts = fs.existsSync(TEXT_FILE) ? JSON.parse(fs.readFileSync(TEXT_FILE)) : [];
     texts.push(req.body.text);
-    saveData(texts);
-    res.json({ success: true, message: "Text saved!" });
+    fs.writeFileSync(TEXT_FILE, JSON.stringify(texts, null, 2));
+    res.json({ message: "Text saved" });
 });
 
-// Delete a text by index
-app.delete("/:index", (req, res) => {
-    let texts = loadData();
-    const index = parseInt(req.params.index);
-
-    if (index < 0 || index >= texts.length) {
-        return res.status(400).json({ error: "Invalid index!" });
-    }
-
-    texts.splice(index, 1);
-    saveData(texts);
-    res.json({ success: true, message: "Text deleted!" });
+// Get all texts
+app.get("/texts", (req, res) => {
+    let texts = fs.existsSync(TEXT_FILE) ? JSON.parse(fs.readFileSync(TEXT_FILE)) : [];
+    res.json(texts);
 });
 
-// Start the server
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+// Start server
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
