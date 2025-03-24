@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,8 +12,8 @@
         textarea { width: 80%; height: 100px; padding: 10px; }
         button { padding: 10px 15px; margin: 10px; cursor: pointer; }
         .note { background: #f4f4f4; padding: 10px; margin: 5px auto; width: 80%; 
-                border-left: 5px solid #007BFF; text-align: left; }
-        .visitor-box { background: #e8e8e8; padding: 10px; margin: 10px auto; width: 80%; text-align: left; }
+                border-left: 5px solid #007BFF; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .deleteBtn { background: red; color: white; border: none; padding: 5px 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -27,10 +28,6 @@
     <h3>Saved Texts:</h3>
     <div id="textContainer"></div>
 
-    <h3>Visitors:</h3>
-    <p id="visitorCount">Visitors: Loading...</p>
-    <div id="visitorList" class="visitor-box"></div>
-
     <script>
         const BACKEND_URL = "https://datastoreapp.onrender.com"; // Replace with your actual backend URL
 
@@ -42,11 +39,12 @@
             let text = document.getElementById("userText").value;
             if (text.trim() === "") return alert("Text cannot be empty!");
 
-            fetch(`${BACKEND_URL}/save`, {
+            fetch(BACKEND_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text: text })
             })
+            .then(response => response.json())
             .then(() => {
                 document.getElementById("userText").value = "";
                 document.getElementById("inputContainer").style.display = "none";
@@ -55,36 +53,41 @@
             .catch(error => console.error("Error:", error));
         }
 
+        function deleteText(index) {
+            fetch(`${BACKEND_URL}/${index}`, {
+                method: "DELETE"
+            })
+            .then(() => loadTexts())
+            .catch(error => console.error("Error:", error));
+        }
+
         function loadTexts() {
             document.getElementById("textContainer").innerHTML = "";
 
-            fetch(`${BACKEND_URL}/texts`)
+            fetch(BACKEND_URL)
             .then(response => response.json())
             .then(data => {
-                data.forEach(note => {
+                data.forEach((note, index) => {
                     let noteDiv = document.createElement("div");
                     noteDiv.className = "note";
-                    noteDiv.innerText = note;
+
+                    let noteText = document.createElement("span");
+                    noteText.innerText = note;
+
+                    let deleteBtn = document.createElement("button");
+                    deleteBtn.className = "deleteBtn";
+                    deleteBtn.innerText = "Delete";
+                    deleteBtn.onclick = () => deleteText(index);
+
+                    noteDiv.appendChild(noteText);
+                    noteDiv.appendChild(deleteBtn);
                     document.getElementById("textContainer").appendChild(noteDiv);
                 });
             })
             .catch(error => console.error("Error:", error));
         }
 
-        function loadVisitors() {
-            fetch(`${BACKEND_URL}/visit`);
-            
-            fetch(`${BACKEND_URL}/visitors`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("visitorCount").innerText = `Visitors: ${data.totalVisitors}`;
-                document.getElementById("visitorList").innerHTML = data.visitors.map(ip => `<p>${ip}</p>`).join("");
-            })
-            .catch(error => console.error("Error:", error));
-        }
-
         loadTexts();
-        loadVisitors();
     </script>
 </body>
 </html>
